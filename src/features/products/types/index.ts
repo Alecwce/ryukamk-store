@@ -6,5 +6,9 @@ export interface Product {
   category: string;
   description?: string;
   stock?: number;
+  rating?: number;
+  reviewCount?: number;
   created_at?: string;
+  colors?: string[];
+  colorImages?: Record<string, string>;
 }
