@@ -1,0 +1,40 @@
+import { create } from 'zustand';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/api/supabase';
+import { logger } from '../lib/logger';
+
+interface AuthState {
+  user: User | null;
+  session: Session | null;
+  isLoading: boolean;
+  setUser: (user: User | null) => void;
+  setSession: (session: Session | null) => void;
+  signOut: () => Promise<void>;
+  initialize: () => Promise<void>;
+}
+
+export const useAuthStore = create<AuthState>((set) => ({
+  user: null,
+  session: null,
+  isLoading: true,
+  setUser: (user) => set({ user }),
+  setSession: (session) => set({ session, user: session?.user ?? null }),
+  signOut: async () => {
+    await supabase.auth.signOut();
+    set({ user: null, session: null });
+  },
+  initialize: async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      set({ session, user: session?.user ?? null, isLoading: false });
+
+      // Escuchar cambios en la sesión
+      supabase.auth.onAuthStateChange((_event, session) => {
+        set({ session, user: session?.user ?? null });
+      });
+    } catch (error) {
+      logger.error('Auth initialization error:', error);
+      set({ isLoading: false });
+    }
+  }
+}));
