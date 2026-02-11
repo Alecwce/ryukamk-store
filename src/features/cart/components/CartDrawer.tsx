@@ -1,19 +1,53 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Minus, Plus, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useMemo } from 'react';
 import { useCartStore } from '@/features/cart/store/useCartStore';
 import { Button } from '@/shared/components/ui/Button';
+import { OptimizedImage } from '@/shared/components/ui/OptimizedImage';
+import { useQuery } from '@tanstack/react-query';
+import { ProductRepository } from '@/features/products/services/product.repository';
+import { MOCK_PRODUCTS } from '@/features/products/data/mockProducts';
 
 export function CartDrawer() {
-  const { isOpen, toggleCart, items, updateQuantity, removeItem, getTotal, clearCart } = useCartStore();
+  const { isOpen, toggleCart, items, addItem, updateQuantity, removeItem, getTotal } = useCartStore();
+
+  const navigate = useNavigate();
+
+  // Load products for upselling (cached from Header/Featured)
+  const { data: allProducts = MOCK_PRODUCTS } = useQuery({
+    queryKey: ['products', 'upselling'],
+    queryFn: async () => {
+      const data = await ProductRepository.getAll();
+      return data && data.length > 0 ? data : MOCK_PRODUCTS;
+    },
+    staleTime: 1000 * 60 * 10,
+  });
+
+  // Calculate matching items for upselling
+  const suggestions = useMemo(() => {
+    const cartProductIds = new Set(items.map(i => i.id));
+    const available = allProducts.filter(p => !cartProductIds.has(p.id) && (p.stock ?? 0) > 0);
+
+    if (items.length > 0) {
+      const lastInCart = items[items.length - 1];
+      const productInfo = allProducts.find(p => p.id === lastInCart.id);
+      const lastCategory = productInfo?.category;
+
+      if (lastCategory) {
+        const sameCategory = available.filter(p => p.category === lastCategory);
+        const others = available.filter(p => p.category !== lastCategory);
+        return [...sameCategory, ...others].slice(0, 3);
+      }
+    }
+    
+    return available.slice(0, 3);
+  }, [items, allProducts]);
 
   const handleCheckout = () => {
-    // Simulación de compra exitosa
     if (items.length === 0) return;
-    
-    // Aquí podrías añadir una animación de éxito antes de limpiar
-    alert('¡Pedido realizado con éxito! Gracias por elegir RYŪKAMI.');
-    clearCart();
     toggleCart();
+    navigate('/checkout');
   };
 
   return (
@@ -73,10 +107,10 @@ export function CartDrawer() {
                       className="bg-dragon-black/40 border border-dragon-fire/20 rounded-lg p-4"
                     >
                       <div className="flex gap-4">
-                        <img
+                         <OptimizedImage
                           src={item.image}
                           alt={`Imagen de ${item.name}`}
-                          className="w-20 h-20 object-cover rounded"
+                          className="w-20 h-20 rounded"
                         />
                         <div className="flex-1">
                           <h3 className="font-display font-bold text-dragon-white mb-1">
@@ -123,6 +157,55 @@ export function CartDrawer() {
                     </motion.li>
                   ))}
                 </ul>
+              )}
+
+              {/* Upselling Section - Completa tu look */}
+              {suggestions.length > 0 && (
+                <div className="mt-12 mb-6">
+                  <h3 className="text-xs font-bold text-dragon-cyan tracking-widest uppercase mb-4 flex items-center gap-2">
+                    <div className="w-1 h-3 bg-dragon-fire rounded-full" />
+                    Completa tu look
+                  </h3>
+                  <div className="space-y-3">
+                    {suggestions.map((product, index) => (
+                      <motion.div
+                        key={product.id}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/5 group hover:border-dragon-fire/30 transition-all"
+                      >
+                        <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-dragon-black">
+                          <OptimizedImage 
+                            src={product.image} 
+                            alt={product.name} 
+                            aspectRatio="square"
+                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" 
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[13px] font-bold text-dragon-white truncate">{product.name}</p>
+                          <p className="text-xs text-dragon-cyan">S/. {product.price.toFixed(2)}</p>
+                        </div>
+                        <button
+                          onClick={() => addItem({
+                            id: product.id,
+                            name: product.name,
+                            price: product.price,
+                            image: product.image,
+                            size: 'M',
+                            color: 'Negro',
+                            quantity: 1
+                          })}
+                          className="w-8 h-8 rounded-full bg-dragon-fire text-white flex items-center justify-center hover:scale-110 active:scale-95 transition-transform"
+                          aria-label={`Añadir ${product.name} al carrito`}
+                        >
+                          <Plus size={18} />
+                        </button>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
 
