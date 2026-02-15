@@ -10,5 +10,6 @@ export interface Product {
   reviewCount?: number;
   created_at?: string;
   colors?: string[];
+  sizes?: string[];
   colorImages?: Record<string, string>;
 }

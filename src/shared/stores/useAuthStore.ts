@@ -1,40 +1,35 @@
 import { create } from 'zustand';
-import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/api/supabase';
-import { logger } from '../lib/logger';
+import { AuthState } from './auth.types';
 
-interface AuthState {
-  user: User | null;
-  session: Session | null;
-  isLoading: boolean;
-  setUser: (user: User | null) => void;
-  setSession: (session: Session | null) => void;
-  signOut: () => Promise<void>;
-  initialize: () => Promise<void>;
-}
-
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   session: null,
   isLoading: true,
+  _subscription: null,
   setUser: (user) => set({ user }),
-  setSession: (session) => set({ session, user: session?.user ?? null }),
+  setSession: (session) => set({ session }),
   signOut: async () => {
     await supabase.auth.signOut();
     set({ user: null, session: null });
   },
-  initialize: async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      set({ session, user: session?.user ?? null, isLoading: false });
-
-      // Escuchar cambios en la sesión
-      supabase.auth.onAuthStateChange((_event, session) => {
-        set({ session, user: session?.user ?? null });
-      });
-    } catch (error) {
-      logger.error('Auth initialization error:', error);
-      set({ isLoading: false });
+  initialize: () => {
+    // Evitar múltiples suscripciones (Memory Leak Fix)
+    const currentSub = get()._subscription;
+    if (currentSub) {
+      currentSub.unsubscribe();
     }
-  }
+
+    // Obtener sesión inicial
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      set({ session, user: session?.user ?? null, isLoading: false });
+    });
+
+    // Suscribirse a cambios
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      set({ session, user: session?.user ?? null, isLoading: false });
+    });
+
+    set({ _subscription: subscription });
+  },
 }));

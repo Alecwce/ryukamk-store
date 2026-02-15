@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { ProductRepository } from '../services/product.repository';
+import { PRODUCT_KEYS } from '@/shared/lib/query-keys';
 import { ProductCard } from './ProductCard';
 
 interface RelatedProductsProps {
@@ -10,7 +11,7 @@ interface RelatedProductsProps {
 
 export function RelatedProducts({ currentProductId, category }: RelatedProductsProps) {
   const { data: products = [], isLoading } = useQuery({
-    queryKey: ['products', 'related', category, currentProductId],
+    queryKey: [...PRODUCT_KEYS.byCategory(category), currentProductId],
     queryFn: async () => {
       const data = await ProductRepository.getByCategory(category);
       // Filtramos el producto actual y limitamos a 4

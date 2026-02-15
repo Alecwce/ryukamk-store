@@ -1,48 +1,49 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Minus, Plus, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useMemo } from 'react';
 import { useCartStore } from '@/features/cart/store/useCartStore';
+
 import { Button } from '@/shared/components/ui/Button';
 import { OptimizedImage } from '@/shared/components/ui/OptimizedImage';
 import { useQuery } from '@tanstack/react-query';
 import { ProductRepository } from '@/features/products/services/product.repository';
 import { MOCK_PRODUCTS } from '@/features/products/data/mockProducts';
+import { PRODUCT_KEYS } from '@/shared/lib/query-keys';
 
 export function CartDrawer() {
   const { isOpen, toggleCart, items, addItem, updateQuantity, removeItem, getTotal } = useCartStore();
 
   const navigate = useNavigate();
 
-  // Load products for upselling (cached from Header/Featured)
-  const { data: allProducts = MOCK_PRODUCTS } = useQuery({
-    queryKey: ['products', 'upselling'],
+  // Load products for upselling (cached from Header/Featured using unified key)
+  // Use 'select' to derive suggestions based on current cart items
+  const { data: suggestions = [] } = useQuery({
+    queryKey: PRODUCT_KEYS.all,
     queryFn: async () => {
       const data = await ProductRepository.getAll();
       return data && data.length > 0 ? data : MOCK_PRODUCTS;
     },
     staleTime: 1000 * 60 * 10,
+    select: (allProducts) => {
+      const cartProductIds = new Set(items.map(i => i.id));
+      const available = allProducts.filter(p => !cartProductIds.has(p.id) && (p.stock ?? 0) > 0);
+
+      if (items.length > 0) {
+        const lastInCart = items[items.length - 1];
+        const productInfo = allProducts.find(p => p.id === lastInCart.id);
+        const lastCategory = productInfo?.category;
+
+        if (lastCategory) {
+          const sameCategory = available.filter(p => p.category === lastCategory);
+          const others = available.filter(p => p.category !== lastCategory);
+          return [...sameCategory, ...others].slice(0, 3);
+        }
+      }
+      
+      return available.slice(0, 3);
+    }
   });
 
-  // Calculate matching items for upselling
-  const suggestions = useMemo(() => {
-    const cartProductIds = new Set(items.map(i => i.id));
-    const available = allProducts.filter(p => !cartProductIds.has(p.id) && (p.stock ?? 0) > 0);
-
-    if (items.length > 0) {
-      const lastInCart = items[items.length - 1];
-      const productInfo = allProducts.find(p => p.id === lastInCart.id);
-      const lastCategory = productInfo?.category;
-
-      if (lastCategory) {
-        const sameCategory = available.filter(p => p.category === lastCategory);
-        const others = available.filter(p => p.category !== lastCategory);
-        return [...sameCategory, ...others].slice(0, 3);
-      }
-    }
-    
-    return available.slice(0, 3);
-  }, [items, allProducts]);
 
   const handleCheckout = () => {
     if (items.length === 0) return;

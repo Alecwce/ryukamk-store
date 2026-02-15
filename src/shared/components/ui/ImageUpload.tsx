@@ -3,6 +3,7 @@ import { useDropzone } from 'react-dropzone';
 import { supabase } from '@/api/supabase';
 import { Upload, X, Loader2, Image as ImageIcon } from 'lucide-react';
 import { useToastStore } from '@/shared/stores/useToastStore';
+import { logger } from '@/shared/lib/logger';
 
 interface ImageUploadProps {
   value: string;
@@ -21,9 +22,9 @@ export function ImageUpload({ value, onChange, onUploading }: ImageUploadProps) 
     onUploading?.(true);
 
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `${fileName}`;
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `products/${fileName}`;
 
       // Upload file to 'products' bucket
       const { error: uploadError } = await supabase.storage
@@ -39,7 +40,7 @@ export function ImageUpload({ value, onChange, onUploading }: ImageUploadProps) 
 
       onChange(publicUrl);
     } catch (error) {
-      console.error('Error uploading image:', error);
+      logger.error('Error uploading image:', error);
       const { addToast } = useToastStore.getState();
       addToast('Error al subir imagen. Verifica el bucket "products" y los permisos RLS.', 'error');
     } finally {
@@ -54,8 +55,25 @@ export function ImageUpload({ value, onChange, onUploading }: ImageUploadProps) 
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: { 'image/*': [] },
     maxFiles: 1,
+    maxSize: 5 * 1024 * 1024, // 5MB
+    accept: {
+      'image/jpeg': ['.jpg', '.jpeg'],
+      'image/png': ['.png'],
+      'image/webp': ['.webp']
+    },
+    onDropRejected: (fileRejections) => {
+      fileRejections.forEach((rejection) => {
+        const { addToast } = useToastStore.getState();
+        if (rejection.errors[0]?.code === 'file-too-large') {
+          addToast('El archivo es muy pesado (máximo 5MB).', 'error');
+        } else if (rejection.errors[0]?.code === 'file-invalid-type') {
+          addToast('Formato no válido. Usa JPG, PNG o WEBP.', 'error');
+        } else {
+          addToast('Error al seleccionar el archivo.', 'error');
+        }
+      });
+    },
     disabled: isUploading
   });
 

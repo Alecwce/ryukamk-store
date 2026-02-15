@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingCart, ArrowLeft, ShieldCheck, Truck, RefreshCw, Star } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { ProductRepository } from '../services/product.repository';
+import { PRODUCT_KEYS } from '@/shared/lib/query-keys';
 import { Product } from '../types';
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
@@ -30,7 +31,7 @@ export default function ProductPage() {
   const { addToast } = useToastStore();
 
   const { data: product, isLoading } = useQuery<Product | null>({
-    queryKey: ['product', id],
+    queryKey: id ? PRODUCT_KEYS.detail(id) : PRODUCT_KEYS.all,
     queryFn: async () => {
       if (!id) return null;
       const data = await ProductRepository.getById(id);
@@ -205,7 +206,7 @@ export default function ProductPage() {
                 TALLA
               </span>
               <div className="flex gap-3">
-                {SIZES.map(size => (
+                {(product.sizes && product.sizes.length > 0 ? product.sizes : SIZES).map(size => (
                   <button
                     key={size}
                     onClick={() => setSelectedSize(size)}
@@ -225,26 +226,37 @@ export default function ProductPage() {
               <span className="block text-sm font-bold text-dragon-cyan tracking-widest uppercase mb-3 text-left">
                 COLOR
               </span>
-              <div className="flex gap-3">
-                {(product.colors && product.colors.length > 0 ? product.colors : COLORS).map(color => (
-                  <button
-                    key={color}
-                    onClick={() => setSelectedColor(color)}
-                    className={`px-4 py-2 rounded-lg border-2 transition-all font-medium text-sm flex items-center gap-2 ${
-                      selectedColor === color
-                        ? 'border-dragon-cyan bg-dragon-cyan/10 text-dragon-white'
-                        : 'border-white/10 text-dragon-white/40 hover:border-white/30'
-                    }`}
-                  >
-                    <div className={clsx(
-                      "w-3 h-3 rounded-full border border-white/20",
-                      color === 'Negro' && "bg-black",
-                      color === 'Blanco' && "bg-white",
-                      color === 'Gris' && "bg-gray-500"
-                    )} />
-                    {color}
-                  </button>
-                ))}
+              <div className="flex gap-3 flex-wrap">
+                {(product.colors && product.colors.length > 0 ? product.colors : COLORS).map(color => {
+                  const colorConfig = {
+                    'Negro': 'bg-black',
+                    'Blanco': 'bg-white',
+                    'Gris': 'bg-gray-500',
+                    'Rojo': 'bg-red-600',
+                    'Azul': 'bg-blue-600',
+                    'Verde': 'bg-green-600',
+                    'Beige': 'bg-[#F5F5DC]',
+                    'Crema': 'bg-[#FFFDD0]'
+                  };
+
+                  return (
+                    <button
+                      key={color}
+                      onClick={() => setSelectedColor(color)}
+                      className={`px-4 py-2 rounded-lg border-2 transition-all font-medium text-sm flex items-center gap-2 ${
+                        selectedColor === color
+                          ? 'border-dragon-cyan bg-dragon-cyan/10 text-dragon-white'
+                          : 'border-white/10 text-dragon-white/40 hover:border-white/30'
+                      }`}
+                    >
+                      <div className={clsx(
+                        "w-3 h-3 rounded-full border border-white/20",
+                        colorConfig[color as keyof typeof colorConfig] || 'bg-white/20'
+                      )} />
+                      {color}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>

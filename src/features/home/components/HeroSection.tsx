@@ -1,29 +1,37 @@
 import { motion } from 'framer-motion';
+import { useMemo } from 'react';
 import { Button } from '@/shared/components/ui/Button';
 import { ChevronDown } from 'lucide-react';
 
 export function HeroSection() {
+  // Optimization: Stable random values for particles to avoid jank on re-render
+  // Reduced from 50 to 15 to improve LCP and reduce main thread load
+  const particles = useMemo(() => {
+    return [...Array(15)].map((_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      duration: 2 + Math.random() * 2,
+      delay: Math.random() * 2,
+    }));
+  }, []);
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-dragon-black">
       <div className="absolute inset-0 bg-fire-glow opacity-20"></div>
 
-      <div className="absolute inset-0">
-        {[...Array(50)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-1 bg-dragon-cyan rounded-full"
+      {/* Optimized Particles Layer */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {particles.map((p) => (
+          <div
+            key={p.id}
+            className="absolute w-1 h-1 bg-dragon-cyan rounded-full animate-flicker"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              opacity: [0.2, 1, 0.2],
-              scale: [1, 1.5, 1],
-            }}
-            transition={{
-              duration: 2 + Math.random() * 2,
-              repeat: Infinity,
-              delay: Math.random() * 2,
+              left: p.left,
+              top: p.top,
+              animationDuration: `${p.duration}s`,
+              animationDelay: `${p.delay}s`,
+              willChange: 'opacity, transform',
             }}
           />
         ))}
@@ -79,12 +87,20 @@ export function HeroSection() {
           transition={{ delay: 0.8 }}
           className="flex flex-col sm:flex-row gap-4 justify-center items-center"
         >
-          <Button size="lg" className="min-w-[200px]">
-            VER COLECCIÓN
-          </Button>
-          <Button variant="outline" size="lg" className="min-w-[200px]">
-            EXPLORAR
-          </Button>
+          <a href="#productos">
+            <Button size="lg" className="min-w-[200px]">
+              VER COLECCIÓN
+            </Button>
+          </a>
+          <a 
+            href="https://wa.me/51999999999?text=Hola%20RYŪKAMI%2C%20quisiera%20más%20información%20sobre%20la%20colección." 
+            target="_blank" 
+            rel="noopener noreferrer"
+          >
+            <Button variant="outline" size="lg" className="min-w-[200px]">
+              EXPLORAR
+            </Button>
+          </a>
         </motion.div>
 
         <motion.div

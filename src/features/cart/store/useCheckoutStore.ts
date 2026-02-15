@@ -1,25 +1,10 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { CheckoutState } from './checkout.types';
 
-interface CheckoutState {
-  name: string;
-  phone: string;
-  address: string;
-  setField: (field: 'name' | 'phone' | 'address', value: string) => void;
-  clearCheckout: () => void;
-}
-
-export const useCheckoutStore = create<CheckoutState>()(
-  persist(
-    (set) => ({
-      name: '',
-      phone: '',
-      address: '',
-      setField: (field, value) => set((state) => ({ ...state, [field]: value })),
-      clearCheckout: () => set({ name: '', phone: '', address: '' }),
-    }),
-    {
-      name: 'ryukami-checkout-storage',
-    }
-  )
-);
+export const useCheckoutStore = create<CheckoutState>((set) => ({
+  name: '',
+  phone: '',
+  address: '',
+  setField: (field, value) => set((state) => ({ ...state, [field]: value })),
+  clearCheckout: () => set({ name: '', phone: '', address: '' }),
+}));

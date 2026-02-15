@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { OptimizedImage } from '@/shared/components/ui/OptimizedImage';
 
 const ugcImages = [
   'https://images.pexels.com/photos/1138673/pexels-photo-1138673.jpeg?auto=compress&cs=tinysrgb&w=400',
@@ -82,13 +83,15 @@ export function Community() {
               className="relative aspect-square cursor-pointer overflow-hidden rounded-2xl glass p-1 group"
             >
               <div className="w-full h-full overflow-hidden rounded-xl bg-dragon-black relative">
-                <img
+                <OptimizedImage
                   src={image}
                   alt={`Community ${index + 1}`}
-                  className="w-full h-full object-cover transition-all duration-700 grayscale group-hover:grayscale-0 group-hover:scale-110"
+                  aspectRatio="square"
+                  className="w-full h-full"
+                  imgClassName="transition-all duration-700 grayscale group-hover:grayscale-0 group-hover:scale-110"
                 />
-                <div className="absolute inset-0 bg-dragon-gradient opacity-0 group-hover:opacity-20 transition-all duration-500" />
-                <div className="absolute inset-0 border-2 border-transparent group-hover:border-dragon-fire/50 rounded-xl transition-all duration-500" />
+                <div className="absolute inset-0 bg-dragon-gradient opacity-0 group-hover:opacity-20 transition-all duration-500 pointer-events-none" />
+                <div className="absolute inset-0 border-2 border-transparent group-hover:border-dragon-fire/50 rounded-xl transition-all duration-500 pointer-events-none" />
               </div>
             </motion.div>
           ))}

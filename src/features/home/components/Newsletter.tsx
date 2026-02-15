@@ -1,19 +1,52 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { Loader2, Mail } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
-import { Mail } from 'lucide-react';
+import { supabase } from '@/api/supabase';
+import { useToastStore } from '@/shared/stores/useToastStore';
+import { newsletterSchema } from '@/shared/utils/validation';
 
 export function Newsletter() {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const { addToast } = useToastStore();
+
+  const mutation = useMutation({
+    mutationFn: async (emailToSubscribe: string) => {
+      // 1. Validar email con Zod
+      const validation = newsletterSchema.safeParse({ email: emailToSubscribe });
+      if (!validation.success) {
+        throw new Error(validation.error.issues[0].message);
+      }
+
+      // 2. Insertar en Supabase
+      const { error } = await supabase
+        .from('newsletter_subscribers')
+        .insert([{ email: emailToSubscribe }]);
+
+      if (error) {
+        // Manejar error de email duplicado (23505 en Postgres)
+        if (error.code === '23505') {
+          throw new Error('Ya estás en el clan');
+        }
+        throw error;
+      }
+
+      return true;
+    },
+    onSuccess: () => {
+      setSubscribed(true);
+      setEmail('');
+    },
+    onError: (error: Error) => {
+      addToast(error.message, 'error');
+    },
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSubscribed(true);
-    setTimeout(() => {
-      setEmail('');
-      setSubscribed(false);
-    }, 3000);
+    mutation.mutate(email);
   };
 
   return (
@@ -68,8 +101,13 @@ export function Newsletter() {
                     required
                     className="flex-1 px-6 py-4 bg-dragon-black/60 border border-dragon-fire/30 rounded-lg text-dragon-white placeholder-dragon-white/40 focus:outline-none focus:border-dragon-fire transition-colors"
                   />
-                  <Button type="submit" size="lg">
-                    SUSCRIBIRME
+                  <Button 
+                    type="submit" 
+                    size="lg" 
+                    disabled={mutation.isPending}
+                    icon={mutation.isPending ? <Loader2 className="animate-spin" /> : null}
+                  >
+                    {mutation.isPending ? 'SUSCRIBIENDO...' : 'SUSCRIBIRME'}
                   </Button>
                 </form>
               ) : (

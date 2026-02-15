@@ -9,6 +9,7 @@ import { OptimizedImage } from '@/shared/components/ui/OptimizedImage';
 import { MobileMenu } from './MobileMenu';
 import { MOCK_PRODUCTS } from '@/features/products/data/mockProducts';
 import { useQuery } from '@tanstack/react-query';
+import { PRODUCT_KEYS } from '@/shared/lib/query-keys';
 
 export function Header() {
   const { toggleCart, getItemCount } = useCartStore();
@@ -23,9 +24,9 @@ export function Header() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Load all products once for cache sharing with FeaturedProducts
+  // Load all products once for cache sharing across the app
   const { data: allProducts = MOCK_PRODUCTS, isLoading } = useQuery({
-    queryKey: ['products', 'featured'],
+    queryKey: PRODUCT_KEYS.all,
     queryFn: async () => {
       const data = await ProductRepository.getAll();
       if (!data || data.length === 0) {
@@ -35,6 +36,7 @@ export function Header() {
     },
     staleTime: 1000 * 60 * 10, // 10 minutos
   });
+
 
   // Focus input when opening search
   useEffect(() => {

@@ -40,16 +40,27 @@ export const ToastContainer = () => {
             <p className="flex-1 text-sm font-medium text-dragon-white">
               {toast.message}
             </p>
+            {toast.action && (
+              <button
+                onClick={() => {
+                  toast.action?.callback();
+                  removeToast(toast.id);
+                }}
+                className="px-3 py-1 rounded-lg bg-white/10 text-dragon-cyan hover:bg-dragon-cyan/20 transition-all text-xs font-bold uppercase tracking-widest border border-white/5"
+              >
+                {toast.action.label}
+              </button>
+            )}
             <button
               onClick={() => removeToast(toast.id)}
-              className="text-white/40 hover:text-white transition-colors"
+              className="text-white/40 hover:text-white transition-colors ml-2"
             >
               <X size={16} />
             </button>
             <motion.div
               initial={{ width: '100%' }}
               animate={{ width: 0 }}
-              transition={{ duration: 3, ease: 'linear' }}
+              transition={{ duration: toast.action ? 5 : 3, ease: 'linear' }}
               className={clsx(
                 "absolute bottom-0 left-0 h-1 bg-current opacity-30",
                 toast.type === 'success' && 'text-dragon-cyan',

@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Filter, X, Search, SlidersHorizontal, ChevronRight } from 'lucide-react';
 import { ProductRepository } from '../services/product.repository';
+import { PRODUCT_KEYS } from '@/shared/lib/query-keys';
 import { MOCK_PRODUCTS } from '../data/mockProducts';
 import { ProductCard } from '../components/ProductCard';
 import { Button } from '@/shared/components/ui/Button';
@@ -16,14 +17,16 @@ export default function CatalogPage() {
   const [maxPrice, setMaxPrice] = useState(200);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
-  // Fetching data
+  // Fetching data using unified cache key
   const { data: products = [], isLoading } = useQuery({
-    queryKey: ['products', 'all'],
+    queryKey: PRODUCT_KEYS.all,
     queryFn: async () => {
       const data = await ProductRepository.getAll();
       return data.length > 0 ? data : MOCK_PRODUCTS;
     },
+    staleTime: 1000 * 60 * 10, // 10 minutos para compartir caché con Header/Home
   });
+
 
   // Get unique categories
   const categories = useMemo(() => {
@@ -187,9 +190,17 @@ export default function CatalogPage() {
             ) : filteredProducts.length > 0 ? (
               <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                 {filteredProducts.map((product) => (
-                  <ProductCard key={product.id} {...product} />
+                  <motion.div
+                    key={product.id}
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    viewport={{ once: true, margin: "100px" }}
+                  >
+                    <ProductCard {...product} />
+                  </motion.div>
                 ))}
               </div>
+
             ) : (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6 text-white/20">
