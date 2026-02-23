@@ -1,20 +1,7 @@
 import { supabase } from '@/api/supabase';
 import { Product } from '../types';
-import { z } from 'zod';
+import { dbProductSchema } from '@/shared/schemas/domainSchemas';
 import { logger } from '@/shared/lib/logger';
-
-// Schema para validación de datos externos
-const productSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  price: z.number().or(z.string().transform(v => parseFloat(v))),
-  image_url: z.string().nullable().optional(),
-  category: z.string().nullable().optional(),
-  description: z.string().nullable().optional(),
-  stock: z.number().nullable().optional(),
-  colors: z.array(z.string()).nullable().optional(),
-  color_images: z.record(z.string(), z.string()).nullable().optional(),
-});
 
 const mapToProduct = (p: Record<string, unknown>): Product => ({
   id: p.id as string,
@@ -35,7 +22,7 @@ const mapToProduct = (p: Record<string, unknown>): Product => ({
 function parseProducts(data: unknown[]): Product[] {
   return data
     .map(p => {
-      const result = productSchema.safeParse(p);
+      const result = dbProductSchema.safeParse(p);
       return result.success ? mapToProduct(p as Record<string, unknown>) : null;
     })
     .filter((p): p is Product => p !== null);
@@ -74,7 +61,7 @@ export const ProductRepository = {
       return null;
     }
 
-    const result = productSchema.safeParse(data);
+    const result = dbProductSchema.safeParse(data);
     return result.success ? mapToProduct(data) : null;
   },
 
