@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { motion, HTMLMotionProps } from 'framer-motion';
+import { motion, HTMLMotionProps, useReducedMotion } from 'framer-motion';
 import clsx from 'clsx';
 
 interface ButtonProps extends HTMLMotionProps<'button'> {
@@ -31,10 +31,12 @@ export function Button({
     lg: 'px-8 py-4 text-lg',
   };
 
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={shouldReduceMotion ? {} : { scale: 1.02 }}
+      whileTap={shouldReduceMotion ? {} : { scale: 0.98 }}
       className={clsx(
         baseStyles, 
         variants[variant], 

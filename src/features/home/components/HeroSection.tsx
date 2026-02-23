@@ -1,14 +1,16 @@
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Button } from '@/shared/components/ui/Button';
 import { ChevronDown } from 'lucide-react';
 
 export function HeroSection() {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-dragon-black">
       <div className="absolute inset-0 bg-fire-glow opacity-20"></div>
 
       <div className="absolute inset-0">
-        {[...Array(50)].map((_, i) => (
+        {!shouldReduceMotion && [...Array(50)].map((_, i) => (
           <motion.div
             key={i}
             className="absolute w-1 h-1 bg-dragon-cyan rounded-full"
@@ -31,13 +33,13 @@ export function HeroSection() {
 
       <div className="relative z-10 container mx-auto px-4 text-center">
         <motion.div
-          initial={{ opacity: 0, y: 50 }}
+          initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           className="mb-8"
         >
           <motion.div
-            animate={{
+            animate={shouldReduceMotion ? {} : {
               scale: [1, 1.1, 1],
               rotate: [0, 5, -5, 0],
             }}
@@ -92,7 +94,7 @@ export function HeroSection() {
         </motion.div>
 
         <motion.div
-          animate={{ y: [0, 10, 0] }}
+          animate={shouldReduceMotion ? { opacity: [0.4, 1, 0.4] } : { y: [0, 10, 0] }}
           transition={{ duration: 2, repeat: Infinity }}
           className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
         >
