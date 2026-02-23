@@ -16,7 +16,7 @@ interface ToastStore {
 export const useToastStore = create<ToastStore>((set) => ({
   toasts: [],
   addToast: (message, type = 'success') => {
-    const id = Math.random().toString(36).substring(2, 9);
+    const id = crypto.randomUUID();
     
     // Validación preventiva
     const validation = toastSchema.safeParse({ id, message, type });

@@ -1,26 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { cartItemSchema } from '@/shared/utils/validation';
+import type { CartItem } from '../types';
+import { getCartItemId } from '../utils/cartItemId';
 
-/**
- * Represents a single item in the shopping cart.
- */
-interface CartItem {
-  /** Unique identifier for the product */
-  id: string;
-  /** Name of the product */
-  name: string;
-  /** Price of the product in local currency */
-  price: number;
-  /** URL of the product image */
-  image: string;
-  /** Selected size variant */
-  size: string;
-  /** Selected color variant */
-  color: string;
-  /** Quantity of this item in the cart */
-  quantity: number;
-}
+export type { CartItem };
 
 /**
  * State and actions for the Shopping Cart Store.
@@ -36,21 +20,23 @@ interface CartStore {
    * If the item already exists (same id, size, and color), increments its quantity.
    * Validates the item using Zod schema before adding.
    * @param item The item to add.
+   * @param maxStock Optional max stock to validate against.
    */
-  addItem: (item: CartItem) => void;
+  addItem: (item: CartItem, maxStock?: number) => void;
 
   /**
    * Removes an item from the cart by its unique composite ID.
-   * @param uniqueId The composite ID (id-size-color) of the item to remove.
+   * @param cartItemKey The composite ID (id-size-color) of the item to remove.
    */
-  removeItem: (uniqueId: string) => void;
+  removeItem: (cartItemKey: string) => void;
 
   /**
    * Updates the quantity of a specific item in the cart.
-   * @param uniqueId The composite ID (id-size-color) of the item.
+   * @param cartItemKey The composite ID (id-size-color) of the item.
    * @param quantity The new quantity to set.
+   * @param maxStock Optional max stock to validate against.
    */
-  updateQuantity: (uniqueId: string, quantity: number) => void;
+  updateQuantity: (cartItemKey: string, quantity: number, maxStock?: number) => void;
 
   /**
    * Toggles the visibility of the cart drawer.
@@ -90,7 +76,7 @@ export const useCartStore = create<CartStore>()(
       items: [],
       isOpen: false,
 
-      addItem: (item) => set((state) => {
+      addItem: (item, maxStock) => set((state) => {
         // Validación con Zod antes de procesar
         const validation = cartItemSchema.safeParse(item);
         if (!validation.success) {
@@ -98,33 +84,50 @@ export const useCartStore = create<CartStore>()(
           return state;
         }
 
-        const uniqueId = `${item.id}-${item.size}-${item.color}`;
-        const existingItem = state.items.find(
-          i => `${i.id}-${i.size}-${i.color}` === uniqueId
-        );
+        const itemKey = getCartItemId(item);
+        const existingItem = state.items.find(i => getCartItemId(i) === itemKey);
 
         if (existingItem) {
+          if (maxStock !== undefined && existingItem.quantity + 1 > maxStock) {
+            console.warn(`⚠️ Stock máximo alcanzado (${maxStock}) para ${item.name}`);
+            return state;
+          }
           return {
             items: state.items.map(i =>
-              `${i.id}-${i.size}-${i.color}` === uniqueId
+              getCartItemId(i) === itemKey
                 ? { ...i, quantity: i.quantity + 1 }
                 : i
             ),
+            isOpen: true
           };
         }
 
-        return { items: [...state.items, { ...item, quantity: 1 }] };
+        if (maxStock !== undefined && maxStock < 1) {
+          console.warn(`⚠️ Sin stock disponible para ${item.name}`);
+          return state;
+        }
+
+        return { 
+          items: [...state.items, { ...item, quantity: 1 }],
+          isOpen: true
+        };
       }),
 
-      removeItem: (uniqueId) => set((state) => ({
-        items: state.items.filter(item => `${item.id}-${item.size}-${item.color}` !== uniqueId),
+      removeItem: (cartItemKey) => set((state) => ({
+        items: state.items.filter(item => getCartItemId(item) !== cartItemKey),
       })),
 
-      updateQuantity: (uniqueId, quantity) => set((state) => ({
-        items: state.items.map(item =>
-          `${item.id}-${item.size}-${item.color}` === uniqueId ? { ...item, quantity } : item
-        ),
-      })),
+      updateQuantity: (cartItemKey, quantity, maxStock) => set((state) => {
+        if (maxStock !== undefined && quantity > maxStock) {
+          console.warn(`⚠️ No puedes agregar más de ${maxStock} unidades`);
+          return state;
+        }
+        return {
+          items: state.items.map(item =>
+            getCartItemId(item) === cartItemKey ? { ...item, quantity } : item
+          ),
+        };
+      }),
 
       toggleCart: () => set((state) => ({ isOpen: !state.isOpen })),
 

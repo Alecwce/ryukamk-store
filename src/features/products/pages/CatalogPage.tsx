@@ -1,13 +1,11 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Filter, X, Search, SlidersHorizontal, ChevronRight } from 'lucide-react';
-import { ProductRepository } from '../services/product.repository';
-import { MOCK_PRODUCTS } from '../data/mockProducts';
 import { ProductCard } from '../components/ProductCard';
 import { Button } from '@/shared/components/ui/Button';
 import { SEO } from '@/shared/components/layout/SEO';
+import { useProducts } from '../hooks/useProducts';
 import clsx from 'clsx';
 
 export default function CatalogPage() {
@@ -16,14 +14,8 @@ export default function CatalogPage() {
   const [maxPrice, setMaxPrice] = useState(200);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
-  // Fetching data
-  const { data: products = [], isLoading } = useQuery({
-    queryKey: ['products', 'all'],
-    queryFn: async () => {
-      const data = await ProductRepository.getAll();
-      return data.length > 0 ? data : MOCK_PRODUCTS;
-    },
-  });
+  // Fetching data — uses shared queryKey ['products'] with MOCK_PRODUCTS fallback
+  const { data: products = [], isLoading } = useProducts();
 
   // Get unique categories
   const categories = useMemo(() => {

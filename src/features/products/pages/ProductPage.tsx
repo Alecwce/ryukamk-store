@@ -15,6 +15,7 @@ import { OptimizedImage } from '@/shared/components/ui/OptimizedImage';
 import { RelatedProducts } from '../components/RelatedProducts';
 import { SEO } from '@/shared/components/layout/SEO';
 import { getMockProductById } from '../data/mockProducts';
+import { CACHE_TIMES } from '@/shared/config/queryConfig';
 import clsx from 'clsx';
 
 const SIZES = ['S', 'M', 'L', 'XL'];
@@ -41,7 +42,7 @@ export default function ProductPage() {
       }
       return data;
     },
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    staleTime: CACHE_TIMES.productDetail.stale,
     enabled: !!id, // Only run query if id is available
   });
 
@@ -171,8 +172,8 @@ export default function ProductPage() {
             {product.name}
           </h1>
 
-          <div className="flex items-center gap-4 mb-6">
-            <span className="text-3xl font-bold bg-dragon-gradient bg-clip-text text-transparent">
+          <div className="flex flex-wrap items-baseline gap-4 mb-4">
+            <span className="text-4xl font-bold bg-dragon-gradient bg-clip-text text-transparent">
               S/. {product.price.toFixed(2)}
             </span>
             {product.reviewCount && product.reviewCount > 0 ? (
@@ -180,12 +181,12 @@ export default function ProductPage() {
                 {[...Array(5)].map((_, i) => (
                   <Star 
                     key={i} 
-                    size={16} 
+                    size={14} 
                     fill={i < Math.floor(product.rating || 0) ? "currentColor" : "none"} 
                     className={i < Math.floor(product.rating || 0) ? "" : "text-white/20"}
                   />
                 ))}
-                <span className="text-xs text-dragon-white/40 ml-1">({product.reviewCount} reviews)</span>
+                <span className="text-[10px] text-dragon-white/40 ml-1">({product.reviewCount} reviews)</span>
               </div>
             ) : (
               <Badge variant="gold" className="text-[10px] py-0.5">
@@ -194,22 +195,22 @@ export default function ProductPage() {
             )}
           </div>
 
-          <p className="text-dragon-white/70 text-lg leading-relaxed mb-8 text-left">
-            {product.description || 'Una prenda diseñada con la esencia de lo urbano y lo tradicional japonés. Calidad garantizada para el estilo de vida RYŪKAMI.'}
+          <p className="text-dragon-white/60 text-base leading-relaxed mb-6 text-left max-w-xl">
+            {product.description || 'Una prenda diseñada con la esencia de lo urbano y lo tradicional japonés.'}
           </p>
 
           {/* Selectores */}
-          <div className="space-y-6 mb-10">
+          <div className="grid grid-cols-2 gap-6 mb-8">
             <div>
-              <span className="block text-sm font-bold text-dragon-cyan tracking-widest uppercase mb-3 text-left">
+              <span className="block text-[10px] font-bold text-dragon-cyan tracking-widest uppercase mb-2 text-left">
                 TALLA
               </span>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-2">
                 {SIZES.map(size => (
                   <button
                     key={size}
                     onClick={() => setSelectedSize(size)}
-                    className={`w-12 h-12 flex items-center justify-center rounded-lg border-2 transition-all font-bold ${
+                    className={`w-10 h-10 flex items-center justify-center rounded-lg border-2 transition-all font-bold text-sm ${
                       selectedSize === size
                         ? 'border-dragon-fire bg-dragon-fire/10 text-dragon-white'
                         : 'border-white/10 text-dragon-white/40 hover:border-white/30'
@@ -222,22 +223,22 @@ export default function ProductPage() {
             </div>
 
             <div>
-              <span className="block text-sm font-bold text-dragon-cyan tracking-widest uppercase mb-3 text-left">
+              <span className="block text-[10px] font-bold text-dragon-cyan tracking-widest uppercase mb-2 text-left">
                 COLOR
               </span>
-              <div className="flex gap-3">
-                {(product.colors && product.colors.length > 0 ? product.colors : COLORS).map(color => (
+              <div className="flex flex-wrap gap-2">
+                {(product.colors && product.colors.length > 0 ? product.colors : COLORS).slice(0, 3).map(color => (
                   <button
                     key={color}
                     onClick={() => setSelectedColor(color)}
-                    className={`px-4 py-2 rounded-lg border-2 transition-all font-medium text-sm flex items-center gap-2 ${
+                    className={`h-10 px-3 rounded-lg border-2 transition-all font-medium text-xs flex items-center gap-2 ${
                       selectedColor === color
                         ? 'border-dragon-cyan bg-dragon-cyan/10 text-dragon-white'
                         : 'border-white/10 text-dragon-white/40 hover:border-white/30'
                     }`}
                   >
                     <div className={clsx(
-                      "w-3 h-3 rounded-full border border-white/20",
+                      "w-2 h-2 rounded-full border border-white/20",
                       color === 'Negro' && "bg-black",
                       color === 'Blanco' && "bg-white",
                       color === 'Gris' && "bg-gray-500"

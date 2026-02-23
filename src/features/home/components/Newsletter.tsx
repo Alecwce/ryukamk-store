@@ -2,18 +2,47 @@ import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { Button } from '@/shared/components/ui/Button';
 import { Mail } from 'lucide-react';
+import { supabase } from '@/api/supabase';
+import { useToastStore } from '@/shared/stores/useToastStore';
 
 export function Newsletter() {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { addToast } = useToastStore();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubscribed(true);
-    setTimeout(() => {
-      setEmail('');
-      setSubscribed(false);
-    }, 3000);
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('newsletter_subscribers')
+        .insert([{ email }]);
+
+      if (error) {
+        // Supabase retorna código 23505 para unique violation
+        if (error.code === '23505') {
+          addToast('Ya estás suscrito al clan 🐉', 'info');
+        } else {
+          throw error;
+        }
+        return;
+      }
+
+      setSubscribed(true);
+      addToast('¡Bienvenido al clan RYŪKAMI! 🐉', 'success');
+      setTimeout(() => {
+        setEmail('');
+        setSubscribed(false);
+      }, 3000);
+    } catch (error) {
+      console.error('Newsletter subscription error:', error);
+      addToast('Error al suscribirse. Intenta de nuevo.', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -66,10 +95,11 @@ export function Newsletter() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="tu@email.com"
                     required
-                    className="flex-1 px-6 py-4 bg-dragon-black/60 border border-dragon-fire/30 rounded-lg text-dragon-white placeholder-dragon-white/40 focus:outline-none focus:border-dragon-fire transition-colors"
+                    disabled={isSubmitting}
+                    className="flex-1 px-6 py-4 bg-dragon-black/60 border border-dragon-fire/30 rounded-lg text-dragon-white placeholder-dragon-white/40 focus:outline-none focus:border-dragon-fire transition-colors disabled:opacity-50"
                   />
-                  <Button type="submit" size="lg">
-                    SUSCRIBIRME
+                  <Button type="submit" size="lg" disabled={isSubmitting}>
+                    {isSubmitting ? 'ENVIANDO...' : 'SUSCRIBIRME'}
                   </Button>
                 </form>
               ) : (

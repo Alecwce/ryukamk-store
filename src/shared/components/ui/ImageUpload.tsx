@@ -22,7 +22,7 @@ export function ImageUpload({ value, onChange, onUploading }: ImageUploadProps) 
 
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const filePath = `${fileName}`;
 
       // Upload file to 'products' bucket

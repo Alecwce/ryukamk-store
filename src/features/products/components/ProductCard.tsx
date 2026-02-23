@@ -1,8 +1,11 @@
 import { memo, useCallback, useMemo } from 'react';
 import { motion, useAnimation } from 'framer-motion';
 import { ShoppingCart, Heart } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/shared/components/ui/Button';
+import { OptimizedImage } from '@/shared/components/ui/OptimizedImage';
 import { useCartStore } from '@/features/cart/store/useCartStore';
+import { useWishlistStore } from '@/features/products/store/useWishlistStore';
 import { useToastStore } from '@/shared/stores/useToastStore';
 import clsx from 'clsx';
 
@@ -17,14 +20,18 @@ interface ProductCardProps {
 
 export const ProductCard = memo(({ id, name, price, image, category, stock = 10 }: ProductCardProps) => {
   const { addItem } = useCartStore();
+  const { toggleItem, isInWishlist } = useWishlistStore();
   const { addToast } = useToastStore();
   const controls = useAnimation();
 
   const isOutOfStock = stock <= 0;
+  const isFavorite = isInWishlist(id);
 
-  const handleAddToCart = useCallback(async () => {
+  const handleAddToCart = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+
     if (isOutOfStock) {
-      // Feedback visual tipo "haptic" (vibración)
       await controls.start({
         x: [0, -10, 10, -10, 10, 0],
         transition: { duration: 0.4 }
@@ -45,14 +52,17 @@ export const ProductCard = memo(({ id, name, price, image, category, stock = 10 
     addToast(`${name} añadido al carrito`, 'success');
   }, [id, name, price, image, addItem, addToast, isOutOfStock, controls]);
 
+  const handleFavorite = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    toggleItem({ id, name, price, image, category, stock });
+    addToast(
+      isFavorite ? `${name} eliminado de favoritos` : `${name} añadido a favoritos`,
+      isFavorite ? 'info' : 'success'
+    );
+  }, [id, name, price, image, category, stock, toggleItem, isFavorite, addToast]);
+
   const formattedPrice = useMemo(() => `S/. ${price.toFixed(2)}`, [price]);
-  
-  const optimizedImage = useMemo(() => {
-    if (image.includes('pexels.com')) {
-      return `${image}${image.includes('?') ? '&' : '?'}fm=webp`;
-    }
-    return image;
-  }, [image]);
 
   return (
     <motion.div
@@ -69,56 +79,60 @@ export const ProductCard = memo(({ id, name, price, image, category, stock = 10 
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
-          className="bg-dragon-black/80 backdrop-blur-sm p-2 rounded-full text-dragon-white hover:text-dragon-fire transition-colors focus:outline-none focus:ring-2 focus:ring-dragon-cyan"
-          aria-label={`Añadir ${name} a favoritos`}
+          onClick={handleFavorite}
+          className={clsx(
+            "bg-dragon-black/80 backdrop-blur-sm p-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-dragon-cyan",
+            isFavorite ? "text-dragon-fire" : "text-dragon-white hover:text-dragon-fire"
+          )}
+          aria-label={isFavorite ? `Quitar ${name} de favoritos` : `Añadir ${name} a favoritos`}
         >
-          <Heart size={20} />
+          <Heart size={20} fill={isFavorite ? "currentColor" : "none"} />
         </motion.button>
       </div>
 
-      <div className="relative aspect-square overflow-hidden bg-dragon-black/60">
-        <img
-          src={optimizedImage}
-          alt={name}
-          loading="lazy"
-          width={400}
-          height={400}
-          className={clsx(
-            "w-full h-full object-cover transition-transform duration-500",
-            !isOutOfStock && "group-hover:scale-110",
-            isOutOfStock && "grayscale opacity-50"
+      <Link to={`/producto/${id}`} className="block">
+        <div className="relative aspect-square overflow-hidden bg-dragon-black/60">
+          <OptimizedImage
+            src={image}
+            alt={name}
+            className={clsx(
+              "w-full h-full object-cover transition-transform duration-500",
+              !isOutOfStock && "group-hover:scale-110",
+              isOutOfStock && "grayscale opacity-50"
+            )}
+          />
+          {isOutOfStock && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+              <span className="bg-dragon-fire text-white px-3 py-1 text-sm font-bold uppercase tracking-wider rounded">
+                Agotado
+              </span>
+            </div>
           )}
-        />
-        {isOutOfStock && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/60">
-            <span className="bg-dragon-fire text-white px-3 py-1 text-sm font-bold uppercase tracking-wider rounded">
-              Agotado
+          {!isOutOfStock && (
+            <div className="absolute inset-0 bg-dragon-gradient opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+          )}
+        </div>
+
+        <div className="p-4">
+          <div className="text-dragon-cyan text-xs tracking-wider mb-2 uppercase">
+            {category}
+          </div>
+          <h3 className="font-display font-bold text-lg text-dragon-white mb-2 group-hover:text-dragon-fire transition-colors line-clamp-2 min-h-[3.5rem] flex items-center">
+            {name}
+          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-2xl font-bold bg-dragon-gradient bg-clip-text text-transparent">
+              {formattedPrice}
             </span>
           </div>
-        )}
-        {!isOutOfStock && (
-          <div className="absolute inset-0 bg-dragon-gradient opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-        )}
-      </div>
-
-      <div className="p-4">
-        <div className="text-dragon-cyan text-xs tracking-wider mb-2 uppercase">
-          {category}
         </div>
-        <h3 className="font-display font-bold text-lg text-dragon-white mb-2 group-hover:text-dragon-fire transition-colors">
-          {name}
-        </h3>
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-2xl font-bold bg-dragon-gradient bg-clip-text text-transparent">
-            {formattedPrice}
-          </span>
-        </div>
+      </Link>
 
+      <div className="px-4 pb-4">
         <Button
           onClick={handleAddToCart}
           variant={isOutOfStock ? 'outline' : 'primary'}
           className="w-full"
-          disabled={false} // Mantenemos habilitado para permitir el feedback de "error/vibración"
           aria-label={isOutOfStock ? `Stock agotado para ${name}` : `Añadir ${name} al carrito por ${formattedPrice}`}
           icon={<ShoppingCart size={18} />}
         >
@@ -126,19 +140,13 @@ export const ProductCard = memo(({ id, name, price, image, category, stock = 10 
         </Button>
       </div>
 
-      <motion.div
-        className="absolute inset-0 border-2 border-dragon-fire rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
-        animate={{
-          boxShadow: [
-            '0 0 20px rgba(220, 38, 38, 0.3)',
-            '0 0 40px rgba(220, 38, 38, 0.5)',
-            '0 0 20px rgba(220, 38, 38, 0.3)',
-          ],
-        }}
-        transition={{ duration: 2, repeat: Infinity }}
+      {/* Glow solo visible en hover */}
+      <div
+        className="absolute inset-0 border-2 border-dragon-fire rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:shadow-[0_0_30px_rgba(220,38,38,0.4)]"
       />
     </motion.div>
   );
 });
 
 ProductCard.displayName = 'ProductCard';
+

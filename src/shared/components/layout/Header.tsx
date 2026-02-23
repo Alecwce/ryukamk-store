@@ -4,11 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCartStore } from '@/features/cart/store/useCartStore';
 import { useWishlistStore } from '@/features/products/store/useWishlistStore';
-import { ProductRepository } from '@/features/products/services/product.repository';
 import { OptimizedImage } from '@/shared/components/ui/OptimizedImage';
 import { MobileMenu } from './MobileMenu';
-import { MOCK_PRODUCTS } from '@/features/products/data/mockProducts';
-import { useQuery } from '@tanstack/react-query';
+import { useProducts } from '@/features/products/hooks/useProducts';
 
 export function Header() {
   const { toggleCart, getItemCount } = useCartStore();
@@ -24,17 +22,7 @@ export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Load all products once for cache sharing with FeaturedProducts
-  const { data: allProducts = MOCK_PRODUCTS, isLoading } = useQuery({
-    queryKey: ['products', 'featured'],
-    queryFn: async () => {
-      const data = await ProductRepository.getAll();
-      if (!data || data.length === 0) {
-        return MOCK_PRODUCTS;
-      }
-      return data;
-    },
-    staleTime: 1000 * 60 * 10, // 10 minutos
-  });
+  const { data: allProducts = [], isLoading } = useProducts();
 
   // Focus input when opening search
   useEffect(() => {

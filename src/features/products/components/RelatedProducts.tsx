@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { ProductRepository } from '../services/product.repository';
 import { ProductCard } from './ProductCard';
+import { CACHE_TIMES } from '@/shared/config/queryConfig';
 
 interface RelatedProductsProps {
   currentProductId: string;
@@ -16,7 +17,7 @@ export function RelatedProducts({ currentProductId, category }: RelatedProductsP
       // Filtramos el producto actual y limitamos a 4
       return data.filter(p => p.id !== currentProductId).slice(0, 4);
     },
-    staleTime: 1000 * 60 * 10, // 10 minutos
+    staleTime: CACHE_TIMES.related.stale,
     enabled: !!category,
   });
 

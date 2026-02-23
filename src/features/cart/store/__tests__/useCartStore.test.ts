@@ -125,7 +125,6 @@ describe('useCartStore', () => {
   });
 
   it('no debe añadir productos inválidos (Zod validation)', () => {
-    // @ts-ignore - Ignoramos error de tipo para testear robustez en runtime
     const invalidItem = { ...mockItem, price: -10 };
     
     useCartStore.getState().addItem(invalidItem);

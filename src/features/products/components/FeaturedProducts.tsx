@@ -1,43 +1,13 @@
 import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { ProductCard } from './ProductCard';
-
-const products = [
-  {
-    id: '1',
-    name: 'Polo Dragon Basic',
-    price: 49.90,
-    image: 'https://images.pexels.com/photos/8532616/pexels-photo-8532616.jpeg?auto=compress&cs=tinysrgb&w=800',
-    category: 'Polos',
-    stock: 20
-  },
-  {
-    id: '2',
-    name: 'Polera Spirit Fire',
-    price: 79.90,
-    image: 'https://images.pexels.com/photos/8532583/pexels-photo-8532583.jpeg?auto=compress&cs=tinysrgb&w=800',
-    category: 'Poleras',
-    stock: 0 // Agotado para probar feedback visual
-  },
-  {
-    id: '3',
-    name: 'Short Warrior Cargo',
-    price: 59.90,
-    image: 'https://images.pexels.com/photos/7679876/pexels-photo-7679876.jpeg?auto=compress&cs=tinysrgb&w=800',
-    category: 'Shorts',
-    stock: 15
-  },
-  {
-    id: '4',
-    name: 'Pantalón Shadow Cargo',
-    price: 89.90,
-    image: 'https://images.pexels.com/photos/5886041/pexels-photo-5886041.jpeg?auto=compress&cs=tinysrgb&w=800',
-    category: 'Pantalones',
-    stock: 5
-  },
-];
+import { useProducts } from '../hooks/useProducts';
 
 export const FeaturedProducts = memo(() => {
+  const { data: products = [], isLoading } = useProducts();
+
+  const featured = products.slice(0, 4);
+
   return (
     <section id="productos" className="py-20 bg-dragon-black relative overflow-hidden">
       <div className="absolute inset-0 bg-fire-glow opacity-5"></div>
@@ -66,17 +36,22 @@ export const FeaturedProducts = memo(() => {
         </motion.div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {products.map((product, index) => (
-            <motion.div
-              key={product.id}
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <ProductCard {...product} />
-            </motion.div>
-          ))}
+          {isLoading
+            ? [...Array(4)].map((_, i) => (
+                <div key={i} className="aspect-[3/4] bg-white/5 animate-pulse rounded-lg" />
+              ))
+            : featured.map((product, index) => (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, y: 50 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <ProductCard {...product} />
+                </motion.div>
+              ))
+          }
         </div>
       </div>
     </section>

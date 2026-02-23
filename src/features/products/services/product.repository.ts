@@ -28,6 +28,19 @@ const mapToProduct = (p: Record<string, unknown>): Product => ({
   colorImages: (p.color_images as Record<string, string>) || {}
 });
 
+/**
+ * Validates and maps an array of raw DB rows to Product[]
+ * Filters out any rows that fail Zod validation.
+ */
+function parseProducts(data: unknown[]): Product[] {
+  return data
+    .map(p => {
+      const result = productSchema.safeParse(p);
+      return result.success ? mapToProduct(p as Record<string, unknown>) : null;
+    })
+    .filter((p): p is Product => p !== null);
+}
+
 export const ProductRepository = {
   /**
    * Obtiene todos los productos del catálogo.
@@ -43,11 +56,7 @@ export const ProductRepository = {
       return [];
     }
 
-    return (data || []).map(p => {
-      const result = productSchema.safeParse(p);
-      if (!result.success) return null;
-      return mapToProduct(p);
-    }).filter((p): p is Product => p !== null);
+    return parseProducts(data || []);
   },
 
   /**
@@ -84,11 +93,7 @@ export const ProductRepository = {
       return [];
     }
 
-    return (data || []).map(p => {
-      const result = productSchema.safeParse(p);
-      if (!result.success) return null;
-      return mapToProduct(p);
-    }).filter((p): p is Product => p !== null);
+    return parseProducts(data || []);
   },
 
   /**

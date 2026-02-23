@@ -82,7 +82,11 @@ export function HeroSection() {
           <Button size="lg" className="min-w-[200px]">
             VER COLECCIÓN
           </Button>
-          <Button variant="outline" size="lg" className="min-w-[200px]">
+          <Button 
+            variant="outline" 
+            size="lg" 
+            className="min-w-[200px] border-white/20 text-dragon-white hover:border-dragon-cyan hover:bg-dragon-cyan/10"
+          >
             EXPLORAR
           </Button>
         </motion.div>

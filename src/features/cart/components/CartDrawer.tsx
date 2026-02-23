@@ -1,48 +1,17 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Minus, Plus, Trash2 } from 'lucide-react';
+import { X, Minus, Plus, Trash2, Truck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useMemo } from 'react';
 import { useCartStore } from '@/features/cart/store/useCartStore';
+import { getCartItemId } from '@/features/cart/utils/cartItemId';
+import { useCartSuggestions } from '@/features/cart/hooks/useCartSuggestions';
 import { Button } from '@/shared/components/ui/Button';
 import { OptimizedImage } from '@/shared/components/ui/OptimizedImage';
-import { useQuery } from '@tanstack/react-query';
-import { ProductRepository } from '@/features/products/services/product.repository';
-import { MOCK_PRODUCTS } from '@/features/products/data/mockProducts';
 
 export function CartDrawer() {
-  const { isOpen, toggleCart, items, addItem, updateQuantity, removeItem, getTotal } = useCartStore();
-
+  const { isOpen, toggleCart, items, addItem, updateQuantity, removeItem, getSummary } = useCartStore();
   const navigate = useNavigate();
-
-  // Load products for upselling (cached from Header/Featured)
-  const { data: allProducts = MOCK_PRODUCTS } = useQuery({
-    queryKey: ['products', 'upselling'],
-    queryFn: async () => {
-      const data = await ProductRepository.getAll();
-      return data && data.length > 0 ? data : MOCK_PRODUCTS;
-    },
-    staleTime: 1000 * 60 * 10,
-  });
-
-  // Calculate matching items for upselling
-  const suggestions = useMemo(() => {
-    const cartProductIds = new Set(items.map(i => i.id));
-    const available = allProducts.filter(p => !cartProductIds.has(p.id) && (p.stock ?? 0) > 0);
-
-    if (items.length > 0) {
-      const lastInCart = items[items.length - 1];
-      const productInfo = allProducts.find(p => p.id === lastInCart.id);
-      const lastCategory = productInfo?.category;
-
-      if (lastCategory) {
-        const sameCategory = available.filter(p => p.category === lastCategory);
-        const others = available.filter(p => p.category !== lastCategory);
-        return [...sameCategory, ...others].slice(0, 3);
-      }
-    }
-    
-    return available.slice(0, 3);
-  }, [items, allProducts]);
+  const suggestions = useCartSuggestions(items);
+  const { subtotal, shipping, total } = getSummary();
 
   const handleCheckout = () => {
     if (items.length === 0) return;
@@ -96,10 +65,36 @@ export function CartDrawer() {
                   </p>
                 </div>
               ) : (
-                <ul className="space-y-4">
+                <div className="space-y-6">
+                  {/* Progress Bar */}
+                  <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+                    <div className="flex justify-between items-center mb-2">
+                       <span className="text-xs font-bold text-dragon-white/80 uppercase flex items-center gap-2">
+                        <Truck size={14} className="text-dragon-cyan" />
+                        {subtotal >= 99 ? '¡TIENES ENVÍO GRATIS!' : 'ENVÍO GRATIS'}
+                      </span>
+                      <span className="text-xs font-bold text-dragon-cyan">
+                        {subtotal >= 99 ? '✓' : `Faltan S/. ${(99 - subtotal).toFixed(2)}`}
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.min((subtotal / 99) * 100, 100)}%` }}
+                        className="h-full bg-dragon-cyan shadow-[0_0_10px_#00f3ff]"
+                      />
+                    </div>
+                    {subtotal < 99 && (
+                      <p className="text-[10px] text-dragon-white/40 mt-2 text-center italic">
+                        Agrega un poco más para ahorrar S/. 12.00 en envío
+                      </p>
+                    )}
+                  </div>
+
+                  <ul className="space-y-4">
                   {items.map((item) => (
                     <motion.li
-                      key={`${item.id}-${item.size}-${item.color}`}
+                      key={getCartItemId(item)}
                       layout
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -128,7 +123,7 @@ export function CartDrawer() {
                       <div className="flex items-center justify-between mt-4">
                         <div className="flex items-center gap-2" role="group" aria-label={`Cantidad para ${item.name}`}>
                           <button
-                            onClick={() => updateQuantity(`${item.id}-${item.size}-${item.color}`, Math.max(1, item.quantity - 1))}
+                            onClick={() => updateQuantity(getCartItemId(item), Math.max(1, item.quantity - 1))}
                             className="bg-dragon-fire/20 hover:bg-dragon-fire/30 text-dragon-white w-8 h-8 rounded flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-dragon-cyan"
                             aria-label="Disminuir cantidad"
                           >
@@ -138,7 +133,7 @@ export function CartDrawer() {
                             {item.quantity}
                           </span>
                           <button
-                            onClick={() => updateQuantity(`${item.id}-${item.size}-${item.color}`, item.quantity + 1)}
+                            onClick={() => updateQuantity(getCartItemId(item), item.quantity + 1)}
                             className="bg-dragon-fire/20 hover:bg-dragon-fire/30 text-dragon-white w-8 h-8 rounded flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-dragon-cyan"
                             aria-label="Aumentar cantidad"
                           >
@@ -147,7 +142,7 @@ export function CartDrawer() {
                         </div>
 
                         <button
-                          onClick={() => removeItem(`${item.id}-${item.size}-${item.color}`)}
+                          onClick={() => removeItem(getCartItemId(item))}
                           className="text-dragon-white/60 hover:text-dragon-fire transition-colors focus:outline-none focus:ring-2 focus:ring-dragon-fire rounded p-1"
                           aria-label={`Eliminar ${item.name} del carrito`}
                         >
@@ -157,7 +152,8 @@ export function CartDrawer() {
                     </motion.li>
                   ))}
                 </ul>
-              )}
+              </div>
+            )}
 
               {/* Upselling Section - Completa tu look */}
               {suggestions.length > 0 && (
@@ -214,21 +210,21 @@ export function CartDrawer() {
                 <div className="flex justify-between text-lg">
                   <span className="text-dragon-white">Subtotal:</span>
                   <span className="text-dragon-white font-bold">
-                    S/. {getTotal().toFixed(2)}
+                    S/. {subtotal.toFixed(2)}
                   </span>
                 </div>
 
                 <div className="flex justify-between text-sm">
                   <span className="text-dragon-white/60">Envío:</span>
                   <span className="text-dragon-cyan">
-                    {getTotal() >= 99 ? 'GRATIS' : 'S/. 12.00'}
+                    {shipping === 0 ? 'GRATIS' : `S/. ${shipping.toFixed(2)}`}
                   </span>
                 </div>
 
                 <div className="border-t border-dragon-fire/20 pt-4 flex justify-between text-xl">
                   <span className="text-dragon-white font-bold">Total:</span>
                   <span className="font-bold bg-dragon-gradient bg-clip-text text-transparent">
-                    S/. {(getTotal() + (getTotal() >= 99 ? 0 : 12)).toFixed(2)}
+                    S/. {total.toFixed(2)}
                   </span>
                 </div>
 
