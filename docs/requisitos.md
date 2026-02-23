@@ -69,6 +69,18 @@ El objetivo principal de **RYŪKAMI** es establecer una plataforma de e-commerce
 
 ---
 
+## 🐲 Estándares de Ingeniería (Skills)
+
+Para asegurar la calidad Staff/Elite del proyecto, se han implementado los siguientes sistemas de control:
+
+1.  **Git-Humanizer**: Historial de versiones en español con tono profesional humano.
+2.  **Supabase-Guardian**: Auditoría de seguridad Zero Trust y políticas RLS.
+3.  **A11y-Motion-Validator**: Validaciones de accesibilidad para animaciones premium.
+4.  **Zod-Contract-Sync**: Integridad de datos garantizada entre DB y Frontend.
+5.  **Glassmorphism-Audit**: Garantía de consistencia estética y visual WOW.
+
+---
+
 ## 📈 Criterios de Aceptación
 
 - El proyecto debe pasar `bun run build` y `bun run typecheck` sin errores.
