@@ -20,9 +20,9 @@ export function Button({
   const baseStyles = 'font-display font-semibold transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed';
 
   const variants = {
-    primary: 'bg-dragon-gradient text-dragon-white hover:shadow-lg hover:shadow-dragon-fire/50',
-    secondary: 'bg-dragon-white text-dragon-black hover:bg-dragon-white/90',
-    outline: 'border-2 border-dragon-fire text-dragon-fire hover:bg-dragon-fire hover:text-dragon-white',
+    primary: 'bg-dragon-gradient text-dragon-white hover:shadow-lg hover:shadow-dragon-fire/50 border border-white/10',
+    secondary: 'bg-dragon-white/10 backdrop-blur-md text-dragon-white border border-white/20 hover:bg-dragon-white/20',
+    outline: 'border border-dragon-white/20 bg-dragon-white/5 backdrop-blur-sm text-dragon-white hover:border-dragon-fire hover:bg-dragon-fire/20',
   };
 
   const sizes = {

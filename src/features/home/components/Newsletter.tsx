@@ -57,7 +57,7 @@ export function Newsletter() {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="bg-dragon-black/40 backdrop-blur-sm border-2 border-dragon-fire/30 rounded-2xl p-8 md:p-12 text-center relative overflow-hidden"
+            className="bg-dragon-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 md:p-12 text-center relative overflow-hidden"
           >
             <motion.div
               className="absolute inset-0 border-2 border-dragon-fire rounded-2xl"
